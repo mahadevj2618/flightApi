@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <form class="search-form" action="{% url 'search' %}" method="post">
+            {% csrf_token %}
+            <label for="origin">Origin</label>
+            <select id="origin" name="origin">
+                <option value="SYD">SYD</option>
+                <option value="JFK">JFK</option>
+                <option value="DEL">DEL</option>
+                <option value="BOM">BOM</option>
+                <option value="BNE">BNE</option>
+                <option value="BLR">BLR</option>
+            </select>
+
+            <label for="destination">Destination</label>
+            <select id="destination" name="destination">
+                <option value="JFK">JFK</option>
+                <option value="DEL">DEL</option>
+                <option value="SYD">SYD</option>
+                <option value="LHR">LHR</option>
+                <option value="CDG">CDG</option>
+                <option value="DOH">DOH</option>
+                <option value="SIN">SIN</option>
+            </select>
+
+            <label for="cabin">Cabin Selection</label>
+            <select id="cabin" name="cabinSelection">
+                <option value="economy">Economy</option>
+                <option value="business">Business</option>
+                <option value="first">First</option>
+            </select>
+
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="pro-filters" name="proFilters">
+                    <span class="slider"></span>
+                </label>
+                <label for="pro-filters">Show Pro Filters</label>
+            </div>
+
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="results">
+            <div class="result-card">
+                <img src="{% static 'logo2.jpeg' %}" alt="KLM" style="width: 50px; height: auto;">
+                <p>KLM</p>
+                <p>Sydney (SYD) -> New York (JFK)</p>
+                <p>Min Economy Miles: 53500 + $189</p>
+            </div>
+            <div class="result-card">
+                <img src="{% static 'logo.jpg' %}" alt="Qantas" style="width: 50px; height: auto;">
+                <p>Qantas</p>
+                <p>Sydney (SYD) -> New York (JFK)</p>
+                <p>Min Business Miles: 144600 + $177</p>
+                <p>Min Economy Miles: 55200 + $158</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                origin: formData.get('origin'),
+                destination: formData.get('destination'),
+                cabinSelection: formData.get('cabinSelection'),
+                proFilters: formData.get('proFilters') ? true : false,
+            };
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = ''; // Clear previous results
+                data.results.forEach(result => {
+                    const resultCard = document.createElement('div');
+                    resultCard.classList.add('result-card');
+                    resultCard.innerHTML = `
+                        <img src="logo_placeholder.png" alt="${result.airline}" style="width: 50px; height: auto;">
+                        <p>${result.airline}</p>
+                        <p>${result.route}</p>
+                        <p>Min Economy Miles: ${result.minEconomyMiles}</p>
+                        ${result.minBusinessMiles ? `<p>Min Business Miles: ${result.minBusinessMiles}</p>` : ''}
+                    `;
+                    resultsContainer.appendChild(resultCard);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html>
